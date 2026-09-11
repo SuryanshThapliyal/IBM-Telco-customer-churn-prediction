@@ -46,7 +46,7 @@ The final model is a **Random Forest** with `class_weight="balanced"` and a clas
 
 ## Why use a 0.40 threshold?
 
-The threshold was selected using validation data with recall prioritised for customer retention. A lower threshold flags more potentially churning customers and helps reduce missed churners, while accepting more false positives. It was not selected because it maximises F1.
+A threshold of `0.40` was selected using validation data because the retention use case prioritises recall. This helps identify more actual churners, while accepting lower precision and a higher number of false positives. It was not selected because it maximises F1.
 
 ## Feature importance and error analysis
 
