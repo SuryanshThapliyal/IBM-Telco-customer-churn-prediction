@@ -1,78 +1,226 @@
 # IBM Telco Customer Churn Prediction
 
-An end-to-end machine-learning project that identifies telecom customers who may be at risk of churn. The goal is to support retention teams with a prioritised outreach list—not to make automatic decisions about customers.
+An end-to-end machine-learning project that identifies telecom customers who may be at risk of churn. The goal is to support retention teams with a prioritised outreach list rather than make automatic decisions about customers.
 
-## Business problem
+## Business Problem
 
-Customer churn directly affects recurring revenue. This project uses customer account, service, and billing attributes to estimate churn risk so that retention efforts can focus on customers who are more likely to leave.
+Customer churn directly affects recurring revenue. This project uses customer account, service, contract, and billing attributes to estimate churn risk so that retention efforts can focus on customers who are more likely to leave.
+
+The key business objective is to identify potential churners while minimizing the number of customers who are missed by the model.
 
 ## Dataset
 
-The analysis uses the IBM Telco Customer Churn dataset, containing 7,043 customer records. The target is `Churn`; approximately 26% of customers churned. The source file is commonly distributed as `WA_Fn-UseC_-Telco-Customer-Churn.csv` through the [IBM Telco Customer Churn dataset on Kaggle](https://www.kaggle.com/datasets/blastchar/telco-customer-churn).
+The analysis uses the IBM Telco Customer Churn dataset, containing 7,043 customer records.
+
+The target variable is `Churn`:
+
+- `Yes` → Customer churned
+- `No` → Customer did not churn
+
+Approximately 26% of customers in the dataset churned.
+
+The source dataset is commonly distributed as `WA_Fn-UseC_-Telco-Customer-Churn.csv` through the IBM Telco Customer Churn dataset on Kaggle.
 
 The dataset is not included in this repository. Download it and place it in a local `data/` folder before running the notebook.
 
-## Project workflow
+## Project Workflow
 
-1. Clean and prepare customer data.
-2. Explore churn patterns across customer, contract, service, and billing variables.
-3. Preprocess numeric and categorical features.
-4. Train and compare baseline classifiers.
-5. Tune the selected model and choose a decision threshold using validation data.
-6. Evaluate final test performance, inspect feature importance, and review false negatives.
+1. Data cleaning and preparation
+2. Exploratory data analysis
+3. Feature preprocessing
+4. Train/test splitting
+5. Baseline model training
+6. Hyperparameter tuning
+7. Validation-based threshold selection
+8. Final test evaluation
+9. Feature importance analysis
+10. False-negative analysis
+11. Business recommendations
 
-## EDA highlights
+## Exploratory Data Analysis
 
-The notebook investigates how churn rates vary across tenure, contract type, service choices, and billing-related attributes. These are observed associations in this dataset; they should not be interpreted as causal effects.
+The analysis examined customer demographics, tenure, contracts, services, billing characteristics, and payment methods to identify patterns associated with churn.
 
-## Models evaluated
+### Key Findings
+
+**Contract type**
+
+Month-to-month customers showed substantially higher churn than customers on one-year and two-year contracts. Contract type was also the most important grouped feature in the final Random Forest model.
+
+**Customer tenure**
+
+Customers with shorter tenure were considerably more likely to churn. The churn rate was highest among customers in the earliest tenure group and decreased as customer tenure increased.
+
+**Monthly charges**
+
+Churned customers generally had higher monthly charges than customers who remained. Within tenure groups, churned customers tended to have higher monthly-charge distributions.
+
+**Payment method**
+
+Customers using electronic checks had substantially higher churn rates than customers using automatic payment methods.
+
+**Online Security and Technical Support**
+
+Customers without OnlineSecurity and TechSupport showed substantially higher churn rates than customers who had these services.
+
+These findings represent associations observed in the dataset and should not be interpreted as evidence that any individual factor directly causes churn.
+
+## Models Evaluated
+
+Four classification algorithms were evaluated:
 
 - Logistic Regression
 - Decision Tree
 - Random Forest
 - Gradient Boosting
 
-## Final model and performance
+The models were evaluated using:
+
+- Accuracy
+- Precision
+- Recall
+- F1 Score
+- ROC-AUC
+
+Because the primary business objective is identifying potential churners, recall for the churn class was given particular importance.
+
+## Final Model and Performance
 
 The final model is a **Random Forest** with `class_weight="balanced"` and a classification threshold of **0.40**.
 
-| Test metric at threshold 0.40 | Result |
+| Test Metric at Threshold 0.40 | Result |
 | --- | ---: |
 | Accuracy | ~72.1% |
 | Precision | ~48.5% |
 | Recall | ~83.7% |
-| F1 score | ~61.4% |
+| F1 Score | ~61.4% |
 | ROC-AUC | ~84.0% |
 
-## Why use a 0.40 threshold?
+The model achieves high recall for the churn class, allowing it to identify a large proportion of customers who actually churned.
 
-A threshold of `0.40` was selected using validation data because the retention use case prioritises recall. This helps identify more actual churners, while accepting lower precision and a higher number of false positives. It was not selected because it maximises F1.
+The trade-off is lower precision, meaning more customers who are predicted as high-risk will ultimately remain.
 
-## Feature importance and error analysis
+For this reason, the model is intended as a **customer-prioritization tool** rather than an automatic decision-making system.
 
-Random Forest feature importance is used to identify which inputs most influenced the model’s predictions. Importance describes predictive usefulness in this model, not the percentage of churn caused by a feature.
+## Threshold Selection
 
-The notebook also reviews false negatives: customers who churned but were not flagged. This matters because missed customers represent potential lost retention opportunities.
+A classification threshold of `0.40` was selected using validation data.
 
-## Business recommendations
+The threshold was chosen based on the business objective of prioritizing recall for customer retention.
 
-- Use model scores to prioritise proactive, human-led retention outreach.
-- Review high-risk customers alongside business context before taking action.
-- Tailor offers and communications to the customer’s plan, tenure, and service profile.
-- Track outcomes of retention campaigns and retrain or recalibrate the model as customer behaviour changes.
+Lowering the threshold allows more potential churners to be identified, while increasing the number of false positives.
+
+The `0.40` threshold was therefore selected as a business-oriented trade-off between identifying churners and limiting unnecessary outreach.
+
+It was **not** selected because it maximizes F1 score.
+
+## Feature Importance
+
+Random Forest feature importance was used to understand which variables contributed most to the model's predictions.
+
+The most influential feature groups included:
+
+- Contract
+- Tenure
+- TotalCharges
+- OnlineSecurity
+- MonthlyCharges
+- InternetService
+- TechSupport
+- PaymentMethod
+- OnlineBackup
+
+Contract type was the strongest grouped feature, followed by customer tenure and billing-related variables.
+
+Feature importance represents predictive usefulness within the trained model. It does not represent the percentage of churn caused by a feature and does not establish causation.
+
+## Error Analysis
+
+False-negative analysis was performed to understand customers who actually churned but were not flagged by the final model.
+
+The analysis showed that false negatives tended to have higher tenure and higher TotalCharges than customers who were correctly identified as churners.
+
+This suggests that the model is particularly effective at identifying more typical high-risk churn profiles, especially shorter-tenure customers, but can have difficulty identifying customers who churn despite having characteristics generally associated with retention.
+
+Model performance also varied across contract types.
+
+The model identified approximately:
+
+- 92% of month-to-month churners
+- 25% of one-year contract churners
+- 0% of two-year contract churners in the test set
+
+The two-year result should not be generalized because the number of churn cases in this segment was very small.
+
+## Business Recommendations
+
+### 1. Prioritize Month-to-Month Customers
+
+Month-to-month customers showed substantially higher churn than customers on longer-term contracts.
+
+Recommended actions:
+
+- Use model predictions to identify high-risk month-to-month customers.
+- Prioritize these customers for proactive retention outreach.
+- Consider targeted incentives for customers who may benefit from longer-term plans.
+
+### 2. Focus on Early-Tenure Customers
+
+Customers in the early stages of their relationship showed substantially higher churn.
+
+Recommended actions:
+
+- Strengthen onboarding and early customer support.
+- Monitor new customers for signs of dissatisfaction.
+- Conduct proactive satisfaction checks.
+- Prioritize high-risk early-tenure customers for retention efforts.
+
+### 3. Target Customers Without Online Security or Technical Support
+
+Customers without OnlineSecurity and TechSupport showed substantially higher churn rates.
+
+Recommended actions:
+
+- Identify high-risk customers who do not use these services.
+- Consider targeted trials, bundles, or upgrades.
+- Provide proactive technical support to customers showing signs of churn.
+
+These recommendations are based on observed associations and do not establish that adding these services directly causes lower churn.
+
+### 4. Monitor Electronic-Check Customers
+
+Electronic-check customers showed substantially higher churn rates than customers using automatic payment methods.
+
+Recommended actions:
+
+- Include payment method as one factor in retention prioritization.
+- Monitor high-risk electronic-check customers more closely.
+- Consider convenient payment options as part of broader customer-engagement strategies.
+
+Payment method should be treated as a risk signal rather than evidence that changing payment method itself causes lower churn.
 
 ## Limitations
 
-- The dataset represents historical observations and may not match every current customer population.
-- Model performance can change over time as products, pricing, and customer behaviour evolve.
-- Associations and feature importance do not establish causation.
-- Predictions should support—not replace—business judgment and fair customer treatment.
+- The dataset represents historical customer observations and may not perfectly represent a current customer population.
+- Model performance may change as products, pricing, and customer behavior change.
+- The model produces false positives as well as false negatives.
+- Performance varies across customer segments, particularly contract types.
+- The two-year contract segment contains very few churn cases in the test set.
+- Feature importance and observed relationships do not establish causation.
+- The classification threshold was selected using validation data.
+- Real business costs were not available for formal cost-sensitive threshold optimization.
 
-## Technologies used
+## Technologies Used
 
-Python, pandas, NumPy, Matplotlib, Seaborn, scikit-learn, and Jupyter Notebook.
+- Python
+- Pandas
+- NumPy
+- Matplotlib
+- Seaborn
+- Scikit-learn
+- Jupyter Notebook
 
-## Project structure
+## Project Structure
 
 ```text
 IBM-Telco-customer-churn-prediction/
@@ -80,32 +228,3 @@ IBM-Telco-customer-churn-prediction/
 ├── README.md
 ├── requirements.txt
 └── .gitignore
-```
-
-## How to run
-
-1. Clone this repository.
-2. Create and activate a virtual environment.
-3. Install dependencies:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Download the dataset and place `WA_Fn-UseC_-Telco-Customer-Churn.csv` in `data/`.
-5. Start Jupyter and open the notebook:
-
-   ```bash
-   jupyter notebook customer_churn.ipynb
-   ```
-
-## Future improvements
-
-- Validate the approach on more recent or production customer data.
-- Monitor performance and fairness after deployment.
-- Evaluate the retention impact and cost of different outreach strategies.
-- Add a lightweight dashboard for business users.
-
-## Conclusion
-
-This project demonstrates an end-to-end churn-prediction workflow, from exploration and preprocessing through model evaluation and business-oriented threshold selection. The final model is designed to help retention teams focus their attention on customers who may be at risk of leaving.
